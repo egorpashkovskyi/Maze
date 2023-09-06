@@ -22,79 +22,90 @@ namespace Maze
     #region Maze
     public class Maze: GameLoop
     {
+        enum direction {
+            None,
+            Up,
+            Down,
+            Left,
+            Right
+        }
+
         private string text;
 
         private Random rand;
 
-        private int apples;
-        private int direction;
+        private int coins;
 
-        private int Xapple;
-        private int Yapple;
+        direction dir;
+
+        private int[] coinsX;
+        private int[] coinsY;
 
         private int amount;
 
-        private int fps = 0;
+        private int fps;
 
-        //Cursor Position
-        private int CursorPositionX;
-        private int CursorPositionY;
-
-        //X Y for Cursor
+        //X Y for Player
         private int[] X;
         private int[] Y;
 
         private char marker;
         private int frameCounter;
         private long time;
+        private long checkTime, newCheckTime;
         private int[] XWall, YWall;
         private ConsoleKey key;
         private StringBuilder String;
 
         public Maze()
         {
-            text = "У тебе :   яблок";
-
-            rand = new Random();
-
-            apples = 0;
-            direction = 0;
-
+            //Start
             Tutorial();
-
             amount = Convert.ToInt32(Console.ReadLine());
 
-            //Cursor Position
-            CursorPositionX = Console.WindowWidth / 2;
-            CursorPositionY = Console.WindowHeight / 2;
+            //Random
+            rand = new Random();
 
-            //X Y for Cursor
-            X = new int[10];
-            Y = new int[10];
+            //X Y for Player
+            X = new int[2];
+            Y = new int[2];
 
-            X[0] = CursorPositionX;
-            Y[0] = CursorPositionY;
+            X[0] = Console.WindowWidth / 2;
+            Y[0] = Console.WindowHeight / 2;
 
             //Create Walls
             Walls();
 
-            //Apple
-            Xapple = rand.Next(0, Console.WindowWidth);
-            Yapple = rand.Next(0, Console.WindowHeight);
+            //Coins
+            coinsX = new int[5];
+            coinsY = new int[5];
 
-            while (Xapple == X[0])
+            for (int i = 0; i < coinsX.Length; i++)
             {
-                Xapple = rand.Next(0, Console.WindowWidth);
+                do {
+                    coinsX[i] = rand.Next(0, Console.WindowWidth);
+                } while (coinsX[i] == X[0]);
+
+                do
+                {
+                    coinsY[i] = rand.Next(0, Console.WindowHeight);
+                } while (coinsY[i] == Y[0]);
             }
-            while (Yapple == Y[0])
-            {
-                Yapple = rand.Next(0, Console.WindowHeight);
-            }
+
 
             //Some other things
+            coins = 0;
+
             marker = ' ';
+
             frameCounter = 0;
+
             time = DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond * 1000);
+            checkTime = DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond * 10);
+
+            text = "";
+
+            SetupBuildStr();
         }
 
         protected override void Input()
@@ -108,26 +119,20 @@ namespace Maze
 
         }
 
-        protected override void Update(out bool Death)
+        protected override void Update(out bool end)
         {
-            Death = false;
-            
-            Move();
+            end = false;
 
-            X[0] = CursorPositionX;
-            Y[0] = CursorPositionY;
+            SavePlayerPosition();
 
-
-            Swap();
-
-            if (Check())
+            if (CheckTime())
             {
-                End();
-                Death = true;
-                //break;
+                Move();
             }
 
-            CheckApple();
+            Check();
+
+            CheckCoins();
 
             //Frame 
 
@@ -137,7 +142,7 @@ namespace Maze
             if (time != newTime)
             {
                 time = newTime;
-                fps = frameCounter;
+                fps = frameCounter; 
 
                 //timeToWait = frameCounter * 100;
                 //timeToWait = 100;
@@ -145,7 +150,7 @@ namespace Maze
                 frameCounter = 0;
             }
 
-            SetupBuildStr();
+            UpdateStringBuilder();
         }
 
         protected override void Draw()
@@ -254,135 +259,103 @@ namespace Maze
             Console.ReadKey();
         }
 
+        bool CheckTime()
+        {
+            newCheckTime = DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond * 10);
+
+            return newCheckTime - checkTime > 2;
+        }
+
         void Move()
         {
+            //Move
+            dir = direction.None;
+
             switch (key)
             {
                 case ConsoleKey.UpArrow:
-                    direction = 4;
+                    dir = direction.Up;
                     break;
                 case ConsoleKey.DownArrow:
-                    direction = 3;
+                    dir = direction.Down;
                     break;
                 case ConsoleKey.LeftArrow:
-                    direction = 2;
+                    dir = direction.Left;
                     break;
                 case ConsoleKey.RightArrow:
-                    direction = 1;
+                    dir = direction.Right;
                     break;
             }
 
-            if (direction == 1)
+            if (dir != direction.None)
+                checkTime = newCheckTime;
+
+            if (dir == direction.Right)
             {
-                CursorPositionX++;
+                X[0]++;
             }
-            else if (direction == 2)
+            else if (dir == direction.Left)
             {
-                CursorPositionX--;
+                X[0]--;
             }
-            else if (direction == 3)
+            else if (dir == direction.Down)
             {
-                CursorPositionY++;
+                Y[0]++;
             }
-            else if (direction == 4)
+            else if (dir == direction.Up)
             {
-                CursorPositionY--;
+                Y[0]--;
             }
         }
 
-        bool Check()
+        void Check()
         {
-            if (CursorPositionX < 0 && direction == 2)
+            if (X[0] < 0 && dir == direction.Left)
             {
-                return true;
+                X[0] = X[1];
             }
-            else if (CursorPositionY < 0 && direction == 4)
+            else if (Y[0] < 0 && dir == direction.Up)
             {
-                return true;
+                Y[0] = Y[1];
             }
-            else if (CursorPositionX == 120 && direction == 1)
+            else if (X[0] == Console.WindowWidth && dir == direction.Right)
             {
-                return true;
+                X[0] = X[1];
             }
-            else if (CursorPositionY == 30 && direction == 3)
+            else if (Y[0] == Console.WindowHeight && dir == direction.Down)
             {
-                return true;
-            }
-
-            for (int i = 2; i < apples + 2; i++)
-            {
-                if (X[1] == X[i])
-                {
-                    for (int x = 2; x < apples; x++)
-                    {
-                        if (Y[1] == Y[i])
-                        {
-                            return true;
-                        }
-                    }
-                }
+                Y[0] = Y[1];
             }
 
             for (int i = 0; i < XWall.Length; i++)
             {
-                if (X[1] == XWall[i] && Y[1] == YWall[i])
+                if (X[0] == XWall[i] && Y[0] == YWall[i])
                 {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        void CheckApple() { 
-
-            if (X[1] == Xapple && Y[1] == Yapple)
-            {
-                apples++;
-
-                bool IsAppleEated = true;
-
-                while (IsAppleEated == true)
-                {
-                    IsAppleEated = false;
-
-                    Xapple = rand.Next(0, Console.WindowWidth);
-                    Yapple = rand.Next(0, Console.WindowHeight);
-
-                    for (int x = 1; x < apples + 2; x++)
-                    {
-                        if (Yapple == Y[x] && Xapple == X[x])
-                        {
-                            IsAppleEated = true;
-                            break;
-                        }
-                    }
+                    X[0] = X[1];
+                    Y[0] = Y[1];
                 }
             }
         }
 
-        void Swap()
+        void CheckCoins()
         {
-            int[] Xsaver = new int[apples + 3];
-
-            for (int i = 1; i < apples + 2; i++)
+            for (int i = 0; i < coinsX.Length; i++)
             {
-                Xsaver[i] = X[i - 1];
+                if (X[1] == coinsX[i] && Y[1] == coinsY[i])
+                {
+                    coins++;
+
+                    coinsX[i] = 0;
+                    coinsY[i] = 0;  
+                }
             }
 
-            X = Xsaver;
+        }
 
-            int[] Ysaver = new int[apples + 3];
-
-            for (int i = 1; i < apples + 2; i++)
-            {
-                Ysaver[i] = Y[i - 1];
-            }
-
-            Y = Ysaver;
-
-            X[0] = 0;
-            Y[0] = 0;
+        void SavePlayerPosition()
+        {
+            X[1] = X[0];
+            Y[1] = Y[0];
         }
 
         void SetupBuildStr()
@@ -402,7 +375,7 @@ namespace Maze
             {
                 if (i == 9)
                 {
-                    String[textPosition] = Convert.ToChar(apples.ToString());
+                    String[textPosition] = Convert.ToChar(coins.ToString());
                 }
                 else
                 {
@@ -418,26 +391,28 @@ namespace Maze
                 String[XWall[i] + YWall[i] * Console.WindowWidth] = '#';
             }
 
-            //Apple
-            String[Xapple + Yapple * Console.WindowWidth] = '*';
-
-            //Snake
-            for (int i = 1; i < apples + 2; i++)
+            //Coins
+            for (int i = 0; i < coinsX.Length; i++)
             {
-                if (i == 1)
-                {
-                    String[X[i] + Y[i] * Console.WindowWidth] = ':';
-                }
-                else
-                {
-                    String[X[i] + Y[i] * Console.WindowWidth] = 'O';
-                }
+                String[coinsX[i] + coinsY[i] * Console.WindowWidth] = '*';
             }
+        }
 
-            //fps
-            String[0] = (char)(Math.Floor(Convert.ToDecimal(fps / 100 + 48)));
-            String[1] = (char)(Math.Floor(Convert.ToDecimal(fps / 10 % 10 + 48)));
+        void UpdateStringBuilder()
+        {
+            //Clear previous position
+            String[X[1] + Y[1] * Console.WindowWidth] = ' ';
+
+            //Fps
+            String[0] = (char)(fps / 100 + 48);
+            String[1] = (char)(fps / 10 % 10 + 48);
             String[2] = (char)(fps % 100 % 10 + 48);
+
+            //Coins
+            String[Console.WindowWidth] = (char)(coins + 48);
+
+            //Player
+            String[X[0] + Y[0] * Console.WindowWidth] = '@';
         }
     }
     #endregion
@@ -447,12 +422,12 @@ namespace Maze
     {
         public void Start()
         {
-            bool Death = false;
-            while (Death == false)
+            bool end = false;
+            while (!end)
             {
                 Timing();
                 Input();
-                Update(out Death);
+                Update(out end);
                 Draw();
             }
         }
