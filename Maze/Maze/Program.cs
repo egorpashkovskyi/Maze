@@ -13,14 +13,14 @@ namespace Maze
         {
             Console.CursorVisible = false;
 
-            var Snake = new SnakeGame();
-            Snake.Start();
+            var Maze = new Maze();
+            Maze.Start();
         }
     }
     #endregion
 
-    #region SnakeGame
-    public class SnakeGame : GameLoop
+    #region Maze
+    public class Maze: GameLoop
     {
         private string text;
 
@@ -44,7 +44,6 @@ namespace Maze
         private int[] X;
         private int[] Y;
 
-        private bool Death;
         private char marker;
         private int frameCounter;
         private long time;
@@ -52,7 +51,7 @@ namespace Maze
         private ConsoleKey key;
         private StringBuilder String;
 
-        public SnakeGame()
+        public Maze()
         {
             text = "У тебе :   яблок";
 
@@ -77,7 +76,7 @@ namespace Maze
             Y[0] = CursorPositionY;
 
             //Create Walls
-            Walls(amount, rand, out XWall, out YWall);
+            Walls();
 
             //Apple
             Xapple = rand.Next(0, Console.WindowWidth);
@@ -93,7 +92,6 @@ namespace Maze
             }
 
             //Some other things
-            Death = false;
             marker = ' ';
             frameCounter = 0;
             time = DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond * 1000);
@@ -112,21 +110,24 @@ namespace Maze
 
         protected override void Update(out bool Death)
         {
-            Move(key, ref direction, ref CursorPositionX, ref CursorPositionY);
+            Death = false;
+            
+            Move();
 
             X[0] = CursorPositionX;
             Y[0] = CursorPositionY;
 
 
-            Swap(ref X, ref Y, apples);
+            Swap();
 
-            Check(ref CursorPositionX, ref CursorPositionY, direction, out Death, ref apples, X, Y, XWall, YWall, rand, ref Xapple, ref Yapple);
-
-            if (Death == true)
+            if (Check())
             {
                 End();
+                Death = true;
                 //break;
             }
+
+            CheckApple();
 
             //Frame 
 
@@ -144,7 +145,7 @@ namespace Maze
                 frameCounter = 0;
             }
 
-            BuildStr(out String, text, apples, XWall, YWall, Xapple, Yapple, X, Y, fps);
+            SetupBuildStr();
         }
 
         protected override void Draw()
@@ -153,7 +154,7 @@ namespace Maze
             Console.SetCursorPosition(0, 0);
         }
 
-        static void Tutorial()
+        void Tutorial()
         {
             string text1 = "Щоб рухатись використовуйте стрiлки";
             string text2 = "Яблуко це '*'";
@@ -180,7 +181,7 @@ namespace Maze
             Console.SetCursorPosition(Console.WindowWidth / 2 - text1.Length / 2, Console.WindowHeight / 2 + 5);
         }
 
-        static void Walls(int amount, Random rand, out int[] XWall, out int[] YWall)
+        void Walls()
         {
             if (amount < 0 ^ amount > Console.WindowHeight * Console.WindowWidth - 10)
             {
@@ -226,7 +227,7 @@ namespace Maze
             }
         }
 
-        static void End()
+        void End()
         {
             Console.Clear();
 
@@ -253,7 +254,7 @@ namespace Maze
             Console.ReadKey();
         }
 
-        static void Move(ConsoleKey key, ref int direction, ref int CursorPositionX, ref int CursorPositionY)
+        void Move()
         {
             switch (key)
             {
@@ -289,25 +290,23 @@ namespace Maze
             }
         }
 
-        static void Check(ref int CursorPositionX, ref int CursorPositionY, int direction, out bool Death, ref int apples, int[] X, int[] Y, int[] WallX, int[] WallY, Random rand, ref int Xapple, ref int Yapple)
+        bool Check()
         {
-            Death = false;
-
             if (CursorPositionX < 0 && direction == 2)
             {
-                Death = true;
+                return true;
             }
             else if (CursorPositionY < 0 && direction == 4)
             {
-                Death = true;
+                return true;
             }
             else if (CursorPositionX == 120 && direction == 1)
             {
-                Death = true;
+                return true;
             }
             else if (CursorPositionY == 30 && direction == 3)
             {
-                Death = true;
+                return true;
             }
 
             for (int i = 2; i < apples + 2; i++)
@@ -318,25 +317,24 @@ namespace Maze
                     {
                         if (Y[1] == Y[i])
                         {
-                            Death = true;
-                            break;
+                            return true;
                         }
-                    }
-                    if (Death == true)
-                    {
-                        break;
                     }
                 }
             }
 
-            for (int i = 0; i < WallX.Length; i++)
+            for (int i = 0; i < XWall.Length; i++)
             {
-                if (X[1] == WallX[i] && Y[1] == WallY[i])
+                if (X[1] == XWall[i] && Y[1] == YWall[i])
                 {
-                    Death = true;
-                    break;
+                    return true;
                 }
             }
+
+            return false;
+        }
+
+        void CheckApple() { 
 
             if (X[1] == Xapple && Y[1] == Yapple)
             {
@@ -363,7 +361,7 @@ namespace Maze
             }
         }
 
-        static void Swap(ref int[] X, ref int[] Y, int apples)
+        void Swap()
         {
             int[] Xsaver = new int[apples + 3];
 
@@ -387,14 +385,14 @@ namespace Maze
             Y[0] = 0;
         }
 
-        static void BuildStr(out StringBuilder newString, string text, int apples, int[] XWall, int[] YWall, int Xapple, int Yapple, int[] X, int[] Y, int fps)
+        void SetupBuildStr()
         {
-            newString = new StringBuilder();
+            String = new StringBuilder();
 
             //Empty
             for (int i = 0; i < Console.WindowHeight; i++)
             {
-                newString.Append(' ', Console.WindowWidth);
+                String.Append(' ', Console.WindowWidth);
             }
 
             //Board
@@ -404,11 +402,11 @@ namespace Maze
             {
                 if (i == 9)
                 {
-                    newString[textPosition] = Convert.ToChar(apples.ToString());
+                    String[textPosition] = Convert.ToChar(apples.ToString());
                 }
                 else
                 {
-                    newString[textPosition] = text[i];
+                    String[textPosition] = text[i];
                 }
 
                 textPosition++;
@@ -417,28 +415,29 @@ namespace Maze
             //Walls
             for (int i = 0; i < XWall.Length; i++)
             {
-                newString[XWall[i] + YWall[i] * Console.WindowWidth] = '#';
+                String[XWall[i] + YWall[i] * Console.WindowWidth] = '#';
             }
 
             //Apple
-            newString[Xapple + Yapple * Console.WindowWidth] = '*';
+            String[Xapple + Yapple * Console.WindowWidth] = '*';
 
             //Snake
             for (int i = 1; i < apples + 2; i++)
             {
                 if (i == 1)
                 {
-                    newString[X[i] + Y[i] * Console.WindowWidth] = ':';
+                    String[X[i] + Y[i] * Console.WindowWidth] = ':';
                 }
                 else
                 {
-                    newString[X[i] + Y[i] * Console.WindowWidth] = 'O';
+                    String[X[i] + Y[i] * Console.WindowWidth] = 'O';
                 }
             }
 
-            newString[0] = (char)(fps / 100 + 48);
-            newString[1] = (char)(fps % 10 / 10 + 48);
-            newString[2] = (char)(fps % 100 + 48);
+            //fps
+            String[0] = (char)(Math.Floor(Convert.ToDecimal(fps / 100 + 48)));
+            String[1] = (char)(Math.Floor(Convert.ToDecimal(fps / 10 % 10 + 48)));
+            String[2] = (char)(fps % 100 % 10 + 48);
         }
     }
     #endregion
