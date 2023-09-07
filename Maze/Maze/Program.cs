@@ -30,81 +30,70 @@ namespace Maze
             Right
         }
 
-        private string text;
-
         private Random rand;
 
         private int coins;
 
         direction dir;
 
-        private int[] coinsX;
-        private int[] coinsY;
+        Cell[,] _cells;
 
-        private int amount;
+        private int amountOfWalls;
+        private int amountOfCoins;
+
+        private int _height;
+        private int _width;
 
         private int fps;
 
         //X Y for Player
-        private int[] X;
-        private int[] Y;
+        private (int,int)[] _playerPos;
 
-        private char marker;
         private int frameCounter;
         private long time;
         private long checkTime, newCheckTime;
-        private int[] XWall, YWall;
         private ConsoleKey key;
         private StringBuilder String;
 
         public Maze()
         {
+            _width = 120;
+            _height = 30;
+
             //Start
             Tutorial();
-            amount = Convert.ToInt32(Console.ReadLine());
 
-            //Random
+            //Setup
             rand = new Random();
 
-            //X Y for Player
-            X = new int[2];
-            Y = new int[2];
-
-            X[0] = Console.WindowWidth / 2;
-            Y[0] = Console.WindowHeight / 2;
-
-            //Create Walls
-            Walls();
-
-            //Coins
-            coinsX = new int[5];
-            coinsY = new int[5];
-
-            for (int i = 0; i < coinsX.Length; i++)
+            _cells = new Cell[_width,_height];
+            for (int i = 0; i < _width; i++)
             {
-                do {
-                    coinsX[i] = rand.Next(0, Console.WindowWidth);
-                } while (coinsX[i] == X[0]);
-
-                do
+                for (int x = 0; x < _height; x++)
                 {
-                    coinsY[i] = rand.Next(0, Console.WindowHeight);
-                } while (coinsY[i] == Y[0]);
+                    _cells[i, x] = new Cell();
+                }
             }
 
+            _playerPos = new (int, int)[2];
 
-            //Some other things
             coins = 0;
-
-            marker = ' ';
 
             frameCounter = 0;
 
             time = DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond * 1000);
             checkTime = DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond * 10);
 
-            text = "";
+            //X Y for Player
+            _playerPos[0] = (_width / 2, _height / 2);
 
+            //Walls
+            GenerateWalls();
+
+            //Coins
+            GenerateCoins();
+
+            //Screen setup
             SetupBuildStr();
         }
 
@@ -162,73 +151,92 @@ namespace Maze
         void Tutorial()
         {
             string text1 = "Щоб рухатись використовуйте стрiлки";
-            string text2 = "Яблуко це '*'";
+            string text2 = "Монети це '*'";
             string text3 = "Стiна '#'";
-            string text4 = "Голова змiйки: ':' та тiло 'O'";
-            string text5 = $"Ведiть число стiнок до {Console.WindowHeight * Console.WindowWidth - 10}";
+            string text4 = "Гравець: '@'";
+            string text5 = $"Ведiть число стiнок до {_height * _width - 10}";
 
             string[] texts = { text1, text2, text3, text4, text5 };
 
-            Console.ForegroundColor = ConsoleColor.Green;
-
             for (int i = 0; i < texts.Length; i++)
             {
-                Console.SetCursorPosition(Console.WindowWidth / 2 - text1.Length / 2, Console.WindowHeight / 2 + i);
+                Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + i);
 
-                for (int x = 0; x < texts[i].Length; x++)
-                {
-                    System.Threading.Thread.Sleep(50);
-                    Console.Write(texts[i][x]);
-                }
+                WriteText(texts[i],50, ConsoleColor.Green);
             }
-            Console.ForegroundColor = ConsoleColor.White;
 
-            Console.SetCursorPosition(Console.WindowWidth / 2 - text1.Length / 2, Console.WindowHeight / 2 + 5);
+            Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + 5);
+            amountOfWalls = Convert.ToInt32(Console.ReadLine());
+
+            Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + 6);
+            string text6 = $"Ведiть число монет до {_height * _width - 10 - amountOfWalls}";
+            WriteText(text6, 50, ConsoleColor.Green);
+
+            Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + 7);
+            amountOfCoins = Convert.ToInt32(Console.ReadLine());
         }
 
-        void Walls()
+        void WriteText(string text, int delayPerLetter, ConsoleColor color)
         {
-            if (amount < 0 ^ amount > Console.WindowHeight * Console.WindowWidth - 10)
+            Console.ForegroundColor = color;
+
+            for (int x = 0; x < text.Length; x++)
             {
-                amount = 0;
+                System.Threading.Thread.Sleep(50);
+                Console.Write(text[x]);
             }
 
-            XWall = new int[amount];
-            YWall = new int[amount];
+            Console.ForegroundColor = ConsoleColor.White;
+        }
 
-            for (int i = 0; i < amount; i++)
+        void GenerateWalls()
+        {
+            if (amountOfWalls < 0 || amountOfWalls > _height * _width - 10)
             {
-                XWall[i] = rand.Next(0, Console.WindowWidth);
-                YWall[i] = rand.Next(0, Console.WindowHeight);
+                amountOfWalls = 200;
             }
 
-            //Check
-            for (int i = 0; i < XWall.Length; i++)
+            int x, y;
+
+            for (int i = 0; i < amountOfWalls; i++)
             {
-                for (int y = 1; y < XWall.Length; y++)
+                do { 
+                    x = rand.Next(0, _width);
+                    y = rand.Next(0, _height);
+                } while (_cells[x, y]._cell != cellType.none);
+
+                _cells[x, y]._cell = cellType.wall;
+
+                string text = amountOfWalls + "/" + (i + 1);
+
+                Console.SetCursorPosition(_width / 2 - text.Length / 2, _height / 2 + 5);
+                Console.Write(text);
+            }
+        }
+
+        void GenerateCoins()
+        {
+            if (amountOfCoins < 0 || amountOfCoins > _height * _width - amountOfWalls)
+            {
+                coins = 5;
+            }
+
+            for (int i = 0; i < amountOfCoins; i++)
+            {
+                int x, y;
+
+                do
                 {
-                    while (true)
-                    {
-                        if (XWall[i] == XWall[y] && YWall[i] == YWall[y] && i != y)
-                        {
-                            XWall[y] = rand.Next(0, Console.WindowWidth);
-                            YWall[y] = rand.Next(0, Console.WindowHeight);
-                        }
-                        else if (XWall[y] > Console.WindowWidth / 2 - 2 && XWall[y] < Console.WindowWidth / 2 + 2 && YWall[y] > Console.WindowHeight / 2 - 2 && YWall[y] < Console.WindowHeight / 2 + 2)
-                        {
-                            XWall[y] = rand.Next(0, Console.WindowWidth);
-                            YWall[y] = rand.Next(0, Console.WindowHeight);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-                string text = amount + "/" + i;
+                    x = rand.Next(0, _width);
+                    y = rand.Next(0, _height);
+                } while (_cells[x, y]._cell != cellType.none);
 
-                Console.SetCursorPosition(Console.WindowWidth / 2 - text.Length / 2, Console.WindowHeight / 2 + 5);
-                Console.Write(amount + "/" + i);
+                _cells[x, y]._cell = cellType.coin;
+
+                string text = amountOfCoins + "/" + (i + 1);
+
+                Console.SetCursorPosition(_width / 2 - text.Length / 2, _height / 2 + 7);
+                Console.Write(text);
             }
         }
 
@@ -240,7 +248,7 @@ namespace Maze
             string text2 = "Натисни любу кнопку щоб закiнчити";
 
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.SetCursorPosition(Console.WindowWidth / 2 - text1.Length / 2, Console.WindowHeight / 2 - 1);
+            Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 - 1);
 
             for (int i = 0; i < text1.Length; i++)
             {
@@ -248,7 +256,7 @@ namespace Maze
                 Console.Write(text1[i]);
             }
 
-            Console.SetCursorPosition(Console.WindowWidth / 2 - text2.Length / 2, Console.WindowHeight / 2);
+            Console.SetCursorPosition(_width / 2 - text2.Length / 2, _height / 2);
 
             for (int i = 0; i < text2.Length; i++)
             {
@@ -292,128 +300,144 @@ namespace Maze
 
             if (dir == direction.Right)
             {
-                X[0]++;
+                _playerPos[0].Item1++;
             }
             else if (dir == direction.Left)
             {
-                X[0]--;
+                _playerPos[0].Item1--;
             }
             else if (dir == direction.Down)
             {
-                Y[0]++;
+                _playerPos[0].Item2++;
             }
             else if (dir == direction.Up)
             {
-                Y[0]--;
+                _playerPos[0].Item2--;
             }
         }
 
         void Check()
         {
-            if (X[0] < 0 && dir == direction.Left)
+            if (_playerPos[0].Item1 < 0 && dir == direction.Left)
             {
-                X[0] = X[1];
+                _playerPos[0].Item1 = _playerPos[1].Item1;
             }
-            else if (Y[0] < 0 && dir == direction.Up)
+            else if (_playerPos[0].Item2 < 0 && dir == direction.Up)
             {
-                Y[0] = Y[1];
+                _playerPos[0].Item2 = _playerPos[1].Item2;
             }
-            else if (X[0] == Console.WindowWidth && dir == direction.Right)
+            else if (_playerPos[0].Item1 == _width && dir == direction.Right)
             {
-                X[0] = X[1];
+                _playerPos[0].Item1 = _playerPos[1].Item1;
             }
-            else if (Y[0] == Console.WindowHeight && dir == direction.Down)
+            else if (_playerPos[0].Item2 == _height && dir == direction.Down)
             {
-                Y[0] = Y[1];
+                _playerPos[0].Item2 = _playerPos[1].Item2;
             }
 
-            for (int i = 0; i < XWall.Length; i++)
+            if (_cells[_playerPos[0].Item1,_playerPos[0].Item2]._cell == cellType.wall)
             {
-                if (X[0] == XWall[i] && Y[0] == YWall[i])
-                {
-                    X[0] = X[1];
-                    Y[0] = Y[1];
-                }
+                _playerPos[0].Item1 = _playerPos[1].Item1;
+                _playerPos[0].Item2 = _playerPos[1].Item2;
             }
         }
 
         void CheckCoins()
         {
-            for (int i = 0; i < coinsX.Length; i++)
+            if (_cells[_playerPos[0].Item1,_playerPos[0].Item2]._cell == cellType.coin)
             {
-                if (X[1] == coinsX[i] && Y[1] == coinsY[i])
-                {
-                    coins++;
-
-                    coinsX[i] = 0;
-                    coinsY[i] = 0;  
-                }
+                _cells[_playerPos[0].Item1, _playerPos[0].Item2]._cell = cellType.none;
+                coins++;
             }
-
         }
 
         void SavePlayerPosition()
         {
-            X[1] = X[0];
-            Y[1] = Y[0];
+            _playerPos[1] = _playerPos[0];
         }
 
         void SetupBuildStr()
         {
             String = new StringBuilder();
 
-            //Empty
-            for (int i = 0; i < Console.WindowHeight; i++)
+            for (int y = 0; y < _height; y++)
             {
-                String.Append(' ', Console.WindowWidth);
-            }
-
-            //Board
-            int textPosition = 60;
-
-            for (int i = 0; i < text.Length; i++)
-            {
-                if (i == 9)
+                for (int x = 0; x < _width; x++)
                 {
-                    String[textPosition] = Convert.ToChar(coins.ToString());
+                    if (_cells[x, y]._cell == cellType.wall)
+                    {
+                        String.Append('#');
+                    }
+                    else if (_cells[x, y]._cell == cellType.coin)
+                    {
+                        String.Append('*');
+                    }
+                    else
+                    {
+                        String.Append(' ');
+                    }
                 }
-                else
-                {
-                    String[textPosition] = text[i];
-                }
-
-                textPosition++;
-            }
-
-            //Walls
-            for (int i = 0; i < XWall.Length; i++)
-            {
-                String[XWall[i] + YWall[i] * Console.WindowWidth] = '#';
-            }
-
-            //Coins
-            for (int i = 0; i < coinsX.Length; i++)
-            {
-                String[coinsX[i] + coinsY[i] * Console.WindowWidth] = '*';
             }
         }
 
         void UpdateStringBuilder()
         {
             //Clear previous position
-            String[X[1] + Y[1] * Console.WindowWidth] = ' ';
+            String[_playerPos[1].Item1 + _playerPos[1].Item2 * _width] = ' ';
 
             //Fps
-            String[0] = (char)(fps / 100 + 48);
-            String[1] = (char)(fps / 10 % 10 + 48);
-            String[2] = (char)(fps % 100 % 10 + 48);
+            Show(fps, 0);
 
             //Coins
-            String[Console.WindowWidth] = (char)(coins + 48);
+            Show(coins, _width);
 
             //Player
-            String[X[0] + Y[0] * Console.WindowWidth] = '@';
+            String[_playerPos[0].Item1 + _playerPos[0].Item2 * _width] = '@';
         }
+
+        void Show(int value,int place)
+        {
+            if (value < 10)
+            {
+                String[place] = (char)(value + 48);
+            }
+            else if (value < 100)
+            {
+                String[place] = (char)(value / 10 + 48);
+                String[place + 1] = (char)(value % 10 + 48);
+            }
+            else if (value < 1000)
+            {
+                String[place] = (char)(value / 100 + 48);
+                String[place + 1] = (char)(value / 10 % 10 + 48);
+                String[place + 2] = (char)(value % 10 + 48);
+            }
+            else if (value < 10000)
+            {
+                String[place] = (char)(value / 1000 + 48);
+                String[place + 1] = (char)(value / 100 % 10 + 48);
+                String[place + 2] = (char)(value / 10 % 10 + 48);
+                String[place + 3] = (char)(value % 10 + 48);
+            }
+        }
+    }
+
+    class Cell
+    {
+        public Cell()
+        {
+            _cell = cellType.none;
+        }
+
+        public cellType _cell;
+    }
+
+    public enum cellType
+    {
+        none,
+        coin,
+        wall,
+        player
     }
     #endregion
 
