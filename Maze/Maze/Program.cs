@@ -43,6 +43,7 @@ namespace Maze
 
         private int _height;
         private int _width;
+        private int distanse;
 
         private int fps;
 
@@ -57,14 +58,14 @@ namespace Maze
 
         public Maze()
         {
-            _width = 120;
-            _height = 30;
+            _width = 80;
+            _height = 20;
 
             //Start
             Tutorial();
 
             //Setup
-            rand = new Random();
+            rand = new Random(500);
 
             _cells = new Cell[_width,_height];
             for (int i = 0; i < _width; i++)
@@ -72,12 +73,14 @@ namespace Maze
                 for (int x = 0; x < _height; x++)
                 {
                     _cells[i, x] = new Cell();
+                    _cells[i, x]._cell = cellType.none;
                 }
             }
 
             _playerPos = new (int, int)[2];
 
             coins = 0;
+            //amountOfCoins = 0;
 
             frameCounter = 0;
 
@@ -85,10 +88,11 @@ namespace Maze
             checkTime = DateTime.Now.Ticks / (TimeSpan.TicksPerMillisecond * 10);
 
             //X Y for Player
-            _playerPos[0] = (_width / 2, _height / 2);
+            _playerPos[0] = (1, 1);
 
-            //Walls
-            GenerateWalls();
+            //Maze
+            distanse = 2;
+            MazeManager();
 
             //Coins
             GenerateCoins();
@@ -144,8 +148,8 @@ namespace Maze
 
         protected override void Draw()
         {
-            Console.Write(String);
             Console.SetCursorPosition(0, 0);
+            Console.Write(String);
         }
 
         void Tutorial()
@@ -154,25 +158,18 @@ namespace Maze
             string text2 = "Монети це '*'";
             string text3 = "Стiна '#'";
             string text4 = "Гравець: '@'";
-            string text5 = $"Ведiть число стiнок до {_height * _width - 10}";
+            string text5 = $"Ведiть число монет:";
 
             string[] texts = { text1, text2, text3, text4, text5 };
 
             for (int i = 0; i < texts.Length; i++)
             {
-                Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + i);
+                Console.SetCursorPosition(Console.WindowWidth / 2 - text1.Length / 2, Console.WindowHeight / 2 + i);
 
                 WriteText(texts[i],50, ConsoleColor.Green);
             }
 
-            Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + 5);
-            amountOfWalls = Convert.ToInt32(Console.ReadLine());
-
-            Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + 6);
-            string text6 = $"Ведiть число монет до {_height * _width - 10 - amountOfWalls}";
-            WriteText(text6, 50, ConsoleColor.Green);
-
-            Console.SetCursorPosition(_width / 2 - text1.Length / 2, _height / 2 + 7);
+            Console.SetCursorPosition(Console.WindowWidth / 2 - text1.Length / 2, Console.WindowHeight / 2 + 5);
             amountOfCoins = Convert.ToInt32(Console.ReadLine());
         }
 
@@ -189,28 +186,118 @@ namespace Maze
             Console.ForegroundColor = ConsoleColor.White;
         }
 
-        void GenerateWalls()
+        void MazeManager()
         {
-            if (amountOfWalls < 0 || amountOfWalls > _height * _width - 10)
+            GenerateMaze(1, 1);
+        }
+
+        void GenerateMaze(int x,int y)
+        {
+            bool left = false, right = false, up = false, down = false;
+
+            if (x > 0)
             {
-                amountOfWalls = 200;
+                if (_cells[x - 1, y]._cell != cellType.claimed && _cells[x - 1, y]._cell != cellType.wall && y % distanse == 1)
+                {
+                    left = true;
+                }
+            }
+            if (x < _width - 1)
+            {
+                if (_cells[x + 1, y]._cell != cellType.claimed && _cells[x + 1, y]._cell != cellType.wall && y % distanse == 1)
+                {
+                    right = true;
+                }
+            }
+            if (y < _height - 1)
+            {
+                if (_cells[x, y + 1]._cell != cellType.claimed && _cells[x, y + 1]._cell != cellType.wall && x % distanse == 1)
+                {
+                    up = true;
+                }
+            }
+            if (y > 0)
+            {
+                if (_cells[x, y - 1]._cell != cellType.claimed && _cells[x, y - 1]._cell != cellType.wall && x % distanse == 1)
+                {
+                    down = true;
+                }
             }
 
-            int x, y;
-
-            for (int i = 0; i < amountOfWalls; i++)
+            while (true)
             {
-                do { 
-                    x = rand.Next(0, _width);
-                    y = rand.Next(0, _height);
-                } while (_cells[x, y]._cell != cellType.none);
+                if (!left && !right && !up && !down)
+                {
+                    break;
+                }
 
-                _cells[x, y]._cell = cellType.wall;
+                int randDir = rand.Next(0,4);
 
-                string text = amountOfWalls + "/" + (i + 1);
+                if (left && randDir == 0)
+                {
+                    if (y < _height - 1 && _cells[x, y + 1]._cell != cellType.claimed)
+                    {
+                        _cells[x, y + 1]._cell = cellType.wall;
+                    }
+                    if (y > 0 && _cells[x, y - 1]._cell != cellType.claimed)
+                    {
+                        _cells[x, y - 1]._cell = cellType.wall;
+                    }
 
-                Console.SetCursorPosition(_width / 2 - text.Length / 2, _height / 2 + 5);
-                Console.Write(text);
+                    left = false;
+                    _cells[x, y]._cell = cellType.claimed;
+
+                    GenerateMaze(x - 1,y);
+
+                }
+                if (right && randDir == 1)
+                {
+                    if (y < _height - 1 && _cells[x, y + 1]._cell != cellType.claimed)
+                    {
+                        _cells[x, y + 1]._cell = cellType.wall;
+                    }
+                    if (y > 0 && _cells[x, y - 1]._cell != cellType.claimed)
+                    {
+                        _cells[x, y - 1]._cell = cellType.wall;
+                    }
+
+                    right = false;
+                    _cells[x, y]._cell = cellType.claimed;
+
+                    GenerateMaze(x + 1, y);
+                } 
+                if (up && randDir == 2)
+                {
+                    if (x < _width - 1 && _cells[x + 1, y]._cell != cellType.claimed)
+                    {
+                        _cells[x + 1, y]._cell = cellType.wall;
+                    }
+                    if (x > 0 && _cells[x - 1, y]._cell != cellType.claimed)
+                    {
+                        _cells[x - 1, y]._cell = cellType.wall;
+                    }
+
+                    up = false;
+                    _cells[x, y]._cell = cellType.claimed;
+
+                    GenerateMaze(x,y + 1);
+                }
+                if (down && randDir == 3)
+                {
+                    if (x < _width - 1 && _cells[x + 1, y]._cell != cellType.claimed)
+                    {
+                        _cells[x + 1, y]._cell = cellType.wall;
+                    }
+                    if (x > 0 && _cells[x - 1, y]._cell != cellType.claimed)
+                    {
+                        _cells[x - 1, y]._cell = cellType.wall;
+                    }
+
+                    down = false;
+                    _cells[x, y]._cell = cellType.claimed;
+
+                    GenerateMaze(x, y - 1);
+                }
             }
         }
 
@@ -229,13 +316,13 @@ namespace Maze
                 {
                     x = rand.Next(0, _width);
                     y = rand.Next(0, _height);
-                } while (_cells[x, y]._cell != cellType.none);
+                } while (_cells[x, y]._cell != cellType.claimed);
 
                 _cells[x, y]._cell = cellType.coin;
 
                 string text = amountOfCoins + "/" + (i + 1);
 
-                Console.SetCursorPosition(_width / 2 - text.Length / 2, _height / 2 + 7);
+                Console.SetCursorPosition(Console.WindowWidth / 2 - text.Length / 2, Console.WindowHeight / 2 + 7);
                 Console.Write(text);
             }
         }
@@ -359,6 +446,8 @@ namespace Maze
         void SetupBuildStr()
         {
             String = new StringBuilder();
+/*            string greenCode = "\u001b[32m]";
+            string resetCode = "\u001b[0m]";*/
 
             for (int y = 0; y < _height; y++)
             {
@@ -366,6 +455,7 @@ namespace Maze
                 {
                     if (_cells[x, y]._cell == cellType.wall)
                     {
+                        //String.Append("\u001b[32m#\u001b[0m");
                         String.Append('#');
                     }
                     else if (_cells[x, y]._cell == cellType.coin)
@@ -377,22 +467,26 @@ namespace Maze
                         String.Append(' ');
                     }
                 }
+                for (int i = 0; i < Console.WindowWidth - _width; i++)
+                {
+                    String.Append(' ');
+                }
             }
         }
 
         void UpdateStringBuilder()
         {
             //Clear previous position
-            String[_playerPos[1].Item1 + _playerPos[1].Item2 * _width] = ' ';
+            String[_playerPos[1].Item1 + _playerPos[1].Item2 * Console.WindowWidth] = ' ';
 
             //Fps
-            Show(fps, 0);
+            //Show(fps, 0);
 
             //Coins
             Show(coins, _width);
 
             //Player
-            String[_playerPos[0].Item1 + _playerPos[0].Item2 * _width] = '@';
+            String[_playerPos[0].Item1 + _playerPos[0].Item2 * Console.WindowWidth] = '@';
         }
 
         void Show(int value,int place)
@@ -437,7 +531,9 @@ namespace Maze
         none,
         coin,
         wall,
-        player
+        player,
+        claimed,
+        saved
     }
     #endregion
 
