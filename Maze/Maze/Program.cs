@@ -154,11 +154,11 @@ namespace Maze
 
         void Tutorial()
         {
-            string text1 = "Щоб рухатись використовуйте стрiлки";
-            string text2 = "Монети це '*'";
-            string text3 = "Стiна '#'";
-            string text4 = "Гравець: '@'";
-            string text5 = $"Ведiть число монет:";
+            string text1 = "Benuzten die Pfeiltasten zum bewegen";
+            string text2 = "Geld ist '*'";
+            string text3 = "Wand '#'";
+            string text4 = "Spieler: '@'";
+            string text5 = $"Eingeben das Einzahl von Geld:";
 
             string[] texts = { text1, text2, text3, text4, text5 };
 
@@ -193,6 +193,10 @@ namespace Maze
 
         void GenerateMaze(int x,int y)
         {
+            System.Threading.Thread.Sleep(50);
+            SetupBuildStr();
+            Draw();
+
             bool left = false, right = false, up = false, down = false;
 
             if (x > 0)

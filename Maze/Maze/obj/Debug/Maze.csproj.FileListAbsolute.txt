@@ -19,3 +19,10 @@ C:\Git\Maze\Maze\Maze\obj\Debug\Maze.csproj.AssemblyReference.cache
 C:\Git\Maze\Maze\Maze\obj\Debug\Maze.csproj.CoreCompileInputs.cache
 C:\Git\Maze\Maze\Maze\obj\Debug\Maze.exe
 C:\Git\Maze\Maze\Maze\obj\Debug\Maze.pdb
+C:\Git\Unity Projects\Maze\Maze\Maze\bin\Debug\Maze.exe.config
+C:\Git\Unity Projects\Maze\Maze\Maze\bin\Debug\Maze.exe
+C:\Git\Unity Projects\Maze\Maze\Maze\bin\Debug\Maze.pdb
+C:\Git\Unity Projects\Maze\Maze\Maze\obj\Debug\Maze.csproj.AssemblyReference.cache
+C:\Git\Unity Projects\Maze\Maze\Maze\obj\Debug\Maze.csproj.CoreCompileInputs.cache
+C:\Git\Unity Projects\Maze\Maze\Maze\obj\Debug\Maze.exe
+C:\Git\Unity Projects\Maze\Maze\Maze\obj\Debug\Maze.pdb
