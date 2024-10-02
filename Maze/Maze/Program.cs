@@ -54,7 +54,7 @@ namespace Maze
 
         public SnakeGame()
         {
-            text = "У тебе :   яблок";
+            text = "Du hast :   Apfel";
 
             rand = new Random();
 
@@ -155,11 +155,11 @@ namespace Maze
 
         static void Tutorial()
         {
-            string text1 = "Щоб рухатись використовуйте стрiлки";
-            string text2 = "Яблуко це '*'";
-            string text3 = "Стiна '#'";
-            string text4 = "Голова змiйки: ':' та тiло 'O'";
-            string text5 = $"Ведiть число стiнок до {Console.WindowHeight * Console.WindowWidth - 10}";
+            string text1 = "Benuzten die Pfeiltasten zum bewegen";
+            string text2 = "Apfel ist '*'";
+            string text3 = "Wand '#'";
+            string text4 = "Kopf von Snake: ':' und Körper 'O'";
+            string text5 = $"Eingeben fur Wand nummer von {Console.WindowHeight * Console.WindowWidth - 10}";
 
             string[] texts = { text1, text2, text3, text4, text5 };
 
@@ -230,8 +230,8 @@ namespace Maze
         {
             Console.Clear();
 
-            string text1 = "Ти вмер";
-            string text2 = "Натисни любу кнопку щоб закiнчити";
+            string text1 = "Du bist gestorben";
+            string text2 = "Gebe eine Taste um den Fenster zu schliesen ein";
 
             Console.ForegroundColor = ConsoleColor.Red;
             Console.SetCursorPosition(Console.WindowWidth / 2 - text1.Length / 2, Console.WindowHeight / 2 - 1);
@@ -460,7 +460,7 @@ namespace Maze
 
         private void Timing()
         {
-            //System.Threading.Thread.Sleep(50);
+            System.Threading.Thread.Sleep(50);
         }
         protected abstract void Input();
         protected abstract void Update(out bool Death);
